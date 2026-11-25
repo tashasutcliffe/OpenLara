@@ -18,17 +18,22 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: Patch legacy JCenter repositories to Google Maven
+      - name: Configure SDK, NDK, and Legacy Maven Repos
         working-directory: src/platform/android
         run: |
           sed -i 's/jcenter()/google()\n        mavenCentral()/g' build.gradle
           sed -i 's/jcenter()/google()\n        mavenCentral()/g' app/build.gradle || true
+          NDK_PATH=$(ls -d "$ANDROID_HOME/ndk/"* 2>/dev/null | tail -n 1)
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          if [ -n "$NDK_PATH" ]; then
+            echo "ndk.dir=$NDK_PATH" >> local.properties
+          fi
 
       - name: Build Debug APK
         working-directory: src/platform/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
